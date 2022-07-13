@@ -1,6 +1,6 @@
 node_modules
 uploads
+logs
+dist
 # Keep environment variables out of version control
 .env
-*.logs
-dist

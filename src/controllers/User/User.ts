@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
-import {  PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import logger from "../../loggers/logger"
 import { StatusCodes } from "http-status-codes";
 import constant from '../../constant/constant'
 import notFound from "../../errors/ApiError404"
+import internalServerError from "../../errors/InternalError"
 
+import cloudinary from "../../utils/cloudinary";
 
 const prisma = new PrismaClient();
 
@@ -194,17 +196,15 @@ const deleteUser = async (req: Request, res: Response) => {
 const deleteManyUsers = async (req: Request, res: Response) => {
     try {
 
-
-        // const User = await prisma.user.delete({
-        //     where: {
-        //         id: parseInt(id)
-        //     }
-        // })
-        // if (!User) {
-        //     return res.status(200).json(constant.USER.ACTION_ERROR)
-        // }
-        // res.status(200).json({ sucess: true })
-
+        const ids = req.body.id;
+        await prisma.user.deleteMany({
+            where: {
+                id: {
+                    in: ids
+                }
+            }
+        });
+        res.status(StatusCodes.OK).json({ sucess: true })
     } catch (error) {
         logger.error("Bulk delete failed", error)
     }
@@ -269,13 +269,103 @@ const UpdateUserDescription = async (req: Request, res: Response) => {
     }
 }
 
-const updateProfileImage = async(req:Request,res:Response)=>{
+const updateProfileImage = async (req: Request, res: Response) => {
     try {
-        
+        //before a user can change dp check if they have a previous dp if yes grab the id and delete the old one before updating 
+
+        const { image } = req.body
+        const hasProfile = await prisma.user.findUnique({
+            where: {
+                id: req.user?.userId
+            }
+        });
+        //if user does not have a profile pic
+        if (hasProfile?.profile === null) {
+            const updateProfilePic = await updateProfile(image, req)
+            return res.status(StatusCodes.OK).json({ success: true, data: updateProfilePic })
+        }
+        // delete old profile in cloudinary before changing to new one
+        const deleteOldPic = await deleteCloudinaryImage(req);
+        if (deleteOldPic) {
+            const updateProfilePic = await updateProfile(image, req)
+            return res.status(StatusCodes.OK).json({ success: true, data: updateProfilePic })
+        }
+
+
     } catch (error) {
         logger.error("Error updating profile pic", error)
     }
 }
 
+const deleteProfile = async (req: Request, res: Response) => {
+    try {
+        const profilePic = await deleteCloudinaryImage(req);
+        if (!profilePic) {
+            throw new internalServerError("cloudinary Image failed to delete");
+        }
+        //update profile to null
+        const deleteImage = await prisma.user.update({
+            where: {
+                id: req.user?.userId
+            },
+            data: {
+                profile: null
+            }
+        })
+        return res.status(StatusCodes.OK).json({ success: true, data: deleteImage })
 
-export default { fetchAllNormalUsers, fetchAllNotUser, fetchAllUsers, findUser, addRole, updateUserRecord, lockUserAccountStatus, deleteUser, deleteManyUsers, UpdateUserDescription,updateProfileImage };
+    } catch (error) {
+        logger.error("failed to delete user profile pic", error)
+    }
+}
+
+
+const updateProfile = async (image: string, req: Request) => {
+    const profile = await cloudinary.uploader.upload(image, {
+        folder: "profile-pic"
+    })
+
+    const updateProfilePic = await prisma.user.update({
+        where: {
+            id: req.user?.userId
+        },
+        data: {
+            profile: profile.public_id
+        }
+    })
+
+    return updateProfilePic;
+}
+
+
+
+const deleteCloudinaryImage = async (req: Request) => {
+    const getUser = await prisma.user.findUnique({
+        where: {
+            id: req.user?.userId
+        }
+    })
+    const deleteOldPic = await cloudinary.uploader.destroy(getUser?.profile!, { resource_type: "image" }, (result, error) => {
+        console.log(result, error)
+    })
+
+    return deleteOldPic;
+}
+
+export default {
+    fetchAllNormalUsers,
+    fetchAllNotUser,
+    fetchAllUsers,
+    findUser,
+    addRole,
+    updateUserRecord,
+    lockUserAccountStatus,
+    deleteUser,
+    deleteManyUsers,
+    UpdateUserDescription,
+    updateProfileImage,
+    searchUserByEmailOrUsername,
+    deleteProfile
+};
+
+
