@@ -215,11 +215,11 @@ const searchUserByEmailOrUsername = async (req: Request, res: Response) => {
     try {
         const { email, username } = req.body;
         let search: Object = {};
-        let status:boolean = true;
+        let status: boolean = true;
         if (status) {
             search = {
                 where: {
-                    isLocked:status
+                    isLocked: status
                 },
                 select: {
                     email: true,
@@ -228,10 +228,10 @@ const searchUserByEmailOrUsername = async (req: Request, res: Response) => {
                     role: true
                 }
             }
-        }else{
+        } else {
             search = {
                 where: {
-                    isLocked:!status
+                    isLocked: !status
                 },
                 select: {
                     email: true,
@@ -332,6 +332,21 @@ const deleteProfile = async (req: Request, res: Response) => {
     }
 }
 
+const fetchAllUsersPaginated = async () => {
+    try {
+
+    } catch (error) {
+        logger.error("error fetching all paginated  user records")
+    }
+}
+
+const fetchAllNormalUsersPaginated = async () => {
+    try {
+
+    } catch (error) {
+        logger.error("error fetching all normal paginated  user records")
+    }
+}
 
 const updateProfile = async (image: string, req: Request) => {
     const profile = await cloudinary.uploader.upload(image, {
@@ -378,7 +393,10 @@ export default {
     UpdateUserDescription,
     updateProfileImage,
     searchUserByEmailOrUsername,
-    deleteProfile
+    deleteProfile,
+    fetchAllNormalUsersPaginated,
+    fetchAllUsersPaginated
+
 };
 
 
