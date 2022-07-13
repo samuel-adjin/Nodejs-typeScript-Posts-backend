@@ -215,10 +215,23 @@ const searchUserByEmailOrUsername = async (req: Request, res: Response) => {
     try {
         const { email, username } = req.body;
         let search: Object = {};
-        if (email) {
+        let status:boolean = true;
+        if (status) {
             search = {
                 where: {
-                    email
+                    isLocked:status
+                },
+                select: {
+                    email: true,
+                    username: true,
+                    id: true,
+                    role: true
+                }
+            }
+        }else{
+            search = {
+                where: {
+                    isLocked:!status
                 },
                 select: {
                     email: true,

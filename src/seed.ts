@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import dotenv from 'dotenv';
 import bcrypt from "bcrypt"
+import logger from "./loggers/logger"
 
 dotenv.config();
 const prisma = new PrismaClient();
@@ -31,7 +32,7 @@ const seedAdmin = async () => {
         });
         console.log(process.env.SUPER_ADMIN_PASSWORD +" "+ process.env.SUPER_ADMIN_USERNAME + " " +  process.env.SUPER_ADMIN_EMAIL)
     } catch (error) {
-        console.log({ error })
+        logger.error("Admin seeding failed", error)
     }
 }
 
