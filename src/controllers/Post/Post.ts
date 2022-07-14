@@ -138,7 +138,8 @@ const publishOrUnpublishPost = async (req: Request, res: Response) => {
 }
 
 
-const fetchAllPostPaginated = async (req: Request, res: Response){
+
+const fetchAllPostPaginated = async (req: Request, res: Response)=>{
     try {
         const perPage = parseInt((req.query.limit as string), 10) || 2;
         const cursor = req.query.cursor as string || undefined;
@@ -197,6 +198,9 @@ const fetchAllPostPaginated = async (req: Request, res: Response){
 }
 
 
+
+
+
 const deleteCloudinaryImage = async (req: Request, postId: string) => {
     const post = await prisma.post.findUnique({
         where: {
@@ -240,9 +244,10 @@ const getUserSpecificPost = async (req: Request, res: Response) => {
     }
 }
 
-const ApproveOrDisapprove = async (req: Request, res: Response){
-    try {
 
+const approveOrDisapprove = async (req:Request,res:Response)=>{
+    try {
+        
     } catch (error) {
         logger.error("Failed to approve or disapprove post for publishing", error)
     }
@@ -260,5 +265,7 @@ export default
         changeImage,
         publishOrUnpublishPost,
         getUserSpecificPost,
-        ApproveOrDisapprove
+        approveOrDisapprove,
+        fetchAllPostPaginated
+      
     }
