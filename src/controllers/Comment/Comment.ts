@@ -27,6 +27,7 @@ const addComment = async (req: Request, res: Response) => {
 const deleteComment = async (req: Request, res: Response) => {
     try {
         const { id, postId } = req.params;
+        //TODO:  refactor code 
         const isliked = await prisma.comment.count({
             where: {
                 id: parseInt(id),

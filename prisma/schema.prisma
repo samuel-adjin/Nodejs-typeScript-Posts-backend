@@ -44,9 +44,6 @@ model Post {
   comment     Comment[]
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
-
-
-
 }
 
 model Like {
@@ -81,7 +78,14 @@ model Award {
   date       String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
 
+model Views {
+  id         Int      @id @default(autoincrement())
+ 
+  count      Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
 }
 
@@ -90,4 +94,10 @@ enum UserRole {
   USER
   EDITOR
   INSPECTOR
+}
+
+enum Status {
+  VIEWED
+  APPROVED
+  DISAPPROVED
 }

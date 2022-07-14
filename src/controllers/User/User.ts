@@ -481,6 +481,7 @@ const deleteCloudinaryImage = async (req: Request) => {
     return deleteOldPic;
 }
 
+
 export default {
     fetchAllNormalUsers,
     fetchAllNotUser,

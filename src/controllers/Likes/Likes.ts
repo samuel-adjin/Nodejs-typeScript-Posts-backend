@@ -10,7 +10,7 @@ const likeOrUnlikePost = async (req: Request, res: Response) => {
     try {
         //check if user records exists on the like table if yes then delete wen user clicks like 
         const { id: postId, likeId } = req.params;
-        //refactor make it middleware
+        //TODO: refactor make it middleware
         const isliked = await prisma.like.count({
             where: {
                 userId: req.user?.userId,

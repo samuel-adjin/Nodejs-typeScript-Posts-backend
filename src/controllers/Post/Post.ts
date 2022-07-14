@@ -227,6 +227,28 @@ const updatePicture = async (image: string, req: Request) => {
     return updateProfilePic;
 }
 
+const getUserSpecificPost = async (req: Request, res: Response) => {
+    try {
+        const getAllUserPosts = await prisma.post.findMany({
+            where: {
+                userId: req.user?.userId
+            }
+        });
+        res.status(StatusCodes.OK).json({ success: true, data: getAllUserPosts })
+    } catch (error) {
+        logger.error("Failed to get user specific posts", error)
+    }
+}
+
+const ApproveOrDisapprove = async (req: Request, res: Response){
+    try {
+
+    } catch (error) {
+        logger.error("Failed to approve or disapprove post for publishing", error)
+    }
+}
+
+
 export default
     {
         createPost,
@@ -236,5 +258,7 @@ export default
         fetchAllunPublishedPosts,
         updatePost,
         changeImage,
-        publishOrUnpublishPost
+        publishOrUnpublishPost,
+        getUserSpecificPost,
+        ApproveOrDisapprove
     }
