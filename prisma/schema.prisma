@@ -87,6 +87,6 @@ model Award {
 enum UserRole {
   ADMIN
   USER
-  Editor
+  EDITOR
   INSPECTOR
 }

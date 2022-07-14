@@ -213,7 +213,7 @@ const deleteManyUsers = async (req: Request, res: Response) => {
 
 const searchUserByEmailOrUsername = async (req: Request, res: Response) => {
     try {
-        const { email, username } = req.body;
+        const { username } = req.body;
         let search: Object = {};
         let status: boolean = true;
         if (status) {
@@ -285,7 +285,6 @@ const UpdateUserDescription = async (req: Request, res: Response) => {
 const updateProfileImage = async (req: Request, res: Response) => {
     try {
         //before a user can change dp check if they have a previous dp if yes grab the id and delete the old one before updating 
-
         const { image } = req.body
         const hasProfile = await prisma.user.findUnique({
             where: {
@@ -332,21 +331,123 @@ const deleteProfile = async (req: Request, res: Response) => {
     }
 }
 
-const fetchAllUsersPaginated = async () => {
-    try {
 
+
+
+const fetchAllUsersPaginated = async (req: Request, res: Response) => {
+    try {
+        const perPage = parseInt((req.query.limit as string), 10) || 2;
+        let pageNumber = parseInt((req.query.pageNumber as string), 10) || 1;
+        let offset: number = Math.abs((pageNumber - 1) * perPage);
+        const users = await prisma.user.findMany({
+            orderBy: {
+                lastName: 'asc',
+            },
+            skip: offset,
+            take: perPage,
+        });
+        if (users.length < 0) {
+            res.status(StatusCodes.OK).json({ sucess: true, msg: constant.Program.NOTHING_TO_SHOW })
+
+        }
+
+        const arraySize: number = await prisma.user.count();
+        let pagetracker: number = pageNumber * perPage;
+        let hasNextPage: boolean = true;
+        if (pagetracker > arraySize || pagetracker === arraySize) {
+            hasNextPage = false
+        }
+        const pageInfo =
+        {
+            hasNextPage,
+            pageNumber: pageNumber,
+            users
+        }
+        res.status(StatusCodes.OK).json({ sucess: true, data: pageInfo })
     } catch (error) {
         logger.error("error fetching all paginated  user records")
     }
 }
 
-const fetchAllNormalUsersPaginated = async () => {
+const fetchAllNormalUsersPaginated = async (req: Request, res: Response) => {
     try {
+        const perPage = parseInt((req.query.limit as string), 10) || 2;
+        let pageNumber = parseInt((req.query.pageNumber as string), 10) || 1;
+        let offset: number = Math.abs((pageNumber - 1) * perPage);
 
+        const users = await prisma.user.findMany({
+            orderBy: {
+                lastName: 'asc',
+            },
+            skip: offset,
+            take: perPage,
+            where: {
+                role: "USER"
+            }
+        });
+        if (users.length < 0) {
+            res.status(StatusCodes.OK).json({ sucess: true, msg: constant.Program.NOTHING_TO_SHOW })
+        }
+
+        const arraySize: number = await prisma.user.count();
+        let pagetracker: number = pageNumber * perPage;
+        let hasNextPage: boolean = true;
+        if (pagetracker > arraySize || pagetracker === arraySize) {
+            hasNextPage = false
+        }
+
+        const pageInfo =
+        {
+            hasNextPage,
+            pageNumber: pageNumber,
+            users
+        }
+        res.status(StatusCodes.OK).json({ sucess: true, data: pageInfo })
     } catch (error) {
         logger.error("error fetching all normal paginated  user records")
     }
 }
+
+
+const fetchAllEditorsPaginated = async (req: Request, res: Response) => {
+    try {
+        const perPage = parseInt((req.query.limit as string), 10) || 2;
+        let pageNumber = parseInt((req.query.pageNumber as string), 10) || 1;
+        let offset: number = Math.abs((pageNumber - 1) * perPage);
+        const users = await prisma.user.findMany({
+            orderBy: {
+                lastName: 'asc',
+            },
+            skip: offset,
+            take: perPage,
+            where: {
+                role: "EDITOR"
+            }
+        });
+        if (users.length < 0) {
+            res.status(StatusCodes.OK).json({ sucess: true, msg: constant.Program.NOTHING_TO_SHOW })
+        }
+        const arraySize: number = await prisma.user.count();
+        let pagetracker: number = pageNumber * perPage;
+        let hasNextPage: boolean = true;
+        if (pagetracker > arraySize || pagetracker === arraySize) {
+            hasNextPage = false
+        }
+        const pageInfo =
+        {
+            hasNextPage,
+            pageNumber: pageNumber,
+            users
+        }
+        res.status(StatusCodes.OK).json({ sucess: true, data: pageInfo })
+    } catch (error) {
+        logger.error("error fetching all normal paginated  user records")
+    }
+}
+
+
+
+
 
 const updateProfile = async (image: string, req: Request) => {
     const profile = await cloudinary.uploader.upload(image, {
@@ -395,7 +496,8 @@ export default {
     searchUserByEmailOrUsername,
     deleteProfile,
     fetchAllNormalUsersPaginated,
-    fetchAllUsersPaginated
+    fetchAllUsersPaginated,
+    fetchAllEditorsPaginated
 
 };
 

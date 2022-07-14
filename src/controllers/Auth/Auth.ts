@@ -10,6 +10,8 @@ import { StatusCodes } from "http-status-codes";
 import logger from "../../loggers/logger";
 import notFound from "../../errors/ApiError404"
 import BadRequest from "../../errors/BadRequest"
+import generator from "generate-password";
+
 
 dotenv.config();
 import { Prisma, PrismaClient } from '@prisma/client'
@@ -19,7 +21,7 @@ const prisma = new PrismaClient()
 
 const register = async (req: Request, res: Response) => {
     try {
-        const { username, email, plainPassword, firstName, middleName, lastName } = req.body;
+        const { username, email, plainPassword, firstName, middleName, lastName, mobile } = req.body;
         const password = await bcrypt.hash(plainPassword, 10);
         let userDetails: Prisma.UserCreateInput;
         if (middleName === null || !middleName) {
@@ -38,6 +40,18 @@ const register = async (req: Request, res: Response) => {
                 lastName,
                 middleName,
                 password
+            }
+        }
+
+        if (mobile) {
+            userDetails = {
+                username,
+                email,
+                firstName,
+                lastName,
+                middleName,
+                password,
+                mobile
             }
         }
         const newUser = await prisma.user.create({
@@ -234,4 +248,50 @@ const token = async (req: Request, res: Response) => {
 }
 
 
-export default { register, login, verifyEmail, token, resetLink, resetPassword };
+const adminCreateUser = async (req: Request, res: Response) => {
+    try {
+
+        const { email, firstName, lastName } = req.body;
+        const emailExist = await prisma.user.findUnique({
+            where: { email }
+        });
+        if (emailExist) {
+            return res.status(400).json(constant.Auth.EmailError)
+        }
+        const password = generator.generate({
+            length: 10,
+            numbers: true,
+            symbols: true,
+            strict: true
+        })
+        const newUser = await prisma.user.create({
+            data: {
+                email,
+                username: email,
+                password,
+                role: "EDITOR",
+                firstName,
+                lastName
+            }
+        });
+        // send email
+        const emailToken = jwt.sign({ email }, process.env.EMAIL_TOKEN!)
+        const html = `<h3>Hello,${newUser.username}</h3>
+           <p>An account with the username:${email} and password${password} has been created for you. After verifying account you are advised to change your password and username Click the link below to verify your email</p>
+            <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/verify-email?token=${emailToken}"> verify email </a>`
+
+        const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.EMAIL_SUBJECT, html);
+
+        const emailData = await emailHelper.emailConfirmation(data)
+        await emailQueue.add('emailJob', emailData);
+        if (newUser) {
+            res.status(201).json({ success: true, data: newUser })
+        }
+
+    } catch (error) {
+        console.log({ error })
+    }
+}
+
+
+export default { register, login, verifyEmail, token, resetLink, resetPassword, adminCreateUser };
