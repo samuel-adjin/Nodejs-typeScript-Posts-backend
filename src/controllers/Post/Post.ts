@@ -140,7 +140,57 @@ const publishOrUnpublishPost = async (req: Request, res: Response) => {
 
 const fetchAllPostPaginated = async (req: Request, res: Response){
     try {
+        const perPage = parseInt((req.query.limit as string), 10) || 2;
+        const cursor = req.query.cursor as string || undefined;
 
+        let data: any[];
+        // Cursor tells the query where it should start from when taking data. A unique point.
+        if (cursor) {
+            data = await prisma.post.findMany({
+                where: {
+                    isPublished: true
+                },
+                take: perPage,
+                skip: 1,
+                cursor: { id: parseInt(cursor) },
+            });
+        } else {
+            data = await prisma.post.findMany({
+                take: perPage,
+                where: {
+                    isPublished: true
+                },
+            });
+        }
+
+        if (data.length > 0) {
+            // Get last value in query
+            const lastResult = data[data.length - 1];
+            // Set the new cursor as id of last result so our next query will know where to begin
+            const myCursor = lastResult.id;
+            // Check if from the last query we have extra data so
+            // we make frontend aware if it can request for more
+            const secondResult = await prisma.post.findMany({
+                take: perPage,
+                cursor: { id: myCursor },
+                where: {
+                    isPublished: true
+                },
+                select: { id: true },
+            });
+            const result = {
+                pageInfo: { endCursor: myCursor, hasNextPage: secondResult.length >= perPage },
+                edges: data.map((d) => ({ cursor: d.id, node: d })),
+            };
+            return res.status(StatusCodes.OK).json({ users: result });
+        }
+
+        return res.status(StatusCodes.OK).json({
+            users: {
+                pageInfo: { endCursor: null, hasNextPage: false },
+                edges: [],
+            },
+        });
     } catch (error) {
         logger.error("Failed to fetch paginated all posts", error)
     }
