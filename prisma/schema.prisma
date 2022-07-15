@@ -42,6 +42,7 @@ model Post {
   userId      Int
   like        Like[]
   comment     Comment[]
+  Views       Views[]
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
 }
@@ -82,11 +83,12 @@ model Award {
 
 model Views {
   id         Int      @id @default(autoincrement())
- 
+  post       Post     @relation(fields: [postId], references: [id])
   count      Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  postId Int
 }
 
 enum UserRole {

@@ -41,4 +41,18 @@ const likeOrUnlikePost = async (req: Request, res: Response) => {
 }
 
 
-export default { likeOrUnlikePost }
+const getAPostComments = async (req:Request,res:Response)=>{
+    try {
+        const{id:postId} = req.params;
+        const likes = prisma.like.findMany({
+            where:{
+                postId: parseInt(postId)
+            }
+        })
+        res.status(StatusCodes.OK).json({sucess:true,data:likes})
+    } catch (error) {
+        logger.error("Error occured while fetching a post likes", error)
+    }
+}
+
+export default { likeOrUnlikePost,getAPostComments }

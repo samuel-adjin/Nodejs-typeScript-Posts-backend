@@ -49,5 +49,19 @@ const deleteComment = async (req: Request, res: Response) => {
     }
 }
 
+const getAPostComments = async (req:Request,res:Response)=>{
+    try {
+        const{id:postId} = req.params;
+        const comment = prisma.comment.findMany({
+            where:{
+                postId: parseInt(postId)
+            }
+        })
+        res.status(StatusCodes.OK).json({sucess:true,data:comment})
+    } catch (error) {
+        logger.error("Error occured while fetching a post comments", error)
+    }
+}
 
-export default { addComment, deleteComment }
+
+export default { addComment, deleteComment,getAPostComments }
