@@ -1,11 +1,13 @@
 import { body } from "express-validator";
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient()
 
-const PostRequestRules =
+const postUpdateRules = 
 [
     body('title').isLength({ min: 5}).trim().notEmpty(),
     body('content').isLength({ min: 105}).trim().notEmpty(),
-    body('image').trim().notEmpty(),
 ]
 
-export default { PostRequestRules }
+
+export default { postUpdateRules }

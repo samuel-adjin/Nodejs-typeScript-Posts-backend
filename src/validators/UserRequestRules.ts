@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 const UserRequestRules =
     [
-        body('email').isEmail().normalizeEmail().toLowerCase().trim(),
+        body('email').isEmail().normalizeEmail().toLowerCase().trim().notEmpty,
         body('username').isLength({ min: 5, max: 15 }).trim().notEmpty(),
         body('firstName').trim().isLength({ min: 1, max: 25 }).notEmpty(),
         body('middleName').trim().isLength({ min: 1, max: 25 }),
