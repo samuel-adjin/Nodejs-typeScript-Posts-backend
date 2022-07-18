@@ -1,10 +1,10 @@
-import { body } from "express-validator";
+// import { body } from "express-validator";
 
 
-const postUpdateImageRules = 
-[
-    body('image').trim().notEmpty(),
-]
+// const postUpdateImageRules = 
+// [
+//     body('image').trim().notEmpty(),
+// ]
 
 
-export default { postUpdateImageRules }
+// export default { postUpdateImageRules }

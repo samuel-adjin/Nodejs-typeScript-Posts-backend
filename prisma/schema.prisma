@@ -23,7 +23,7 @@ model User {
   isLocked    Boolean   @default(false)
   description String?
   profile     String?
-  mobile      String?
+  mobile      String
   post        Post[]
   like        Like[]
   comment     Comment[]

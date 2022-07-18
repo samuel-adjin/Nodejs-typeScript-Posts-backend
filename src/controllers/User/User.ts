@@ -43,8 +43,9 @@ const fetchAllNotUser = async (req: Request, res: Response) => {
 
 const fetchAllUsers = async (req: Request, res: Response) => {
     try {
+       
         const users = await prisma.user.findMany({});
-        res.status(StatusCodes.OK).json({ success: true, data: users })
+       return res.status(StatusCodes.OK).json({ success: true, data: users })
     } catch (error) {
         logger.error("Can't fetch users", error)
     }

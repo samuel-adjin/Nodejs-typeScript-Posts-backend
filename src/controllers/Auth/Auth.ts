@@ -21,7 +21,8 @@ const prisma = new PrismaClient()
 
 const register = async (req: Request, res: Response) => {
     try {
-        const { username, email, plainPassword, firstName, middleName, lastName, mobile } = req.body;
+        logger.debug("testing register")
+        const { username, email, plainPassword, firstName, middleName, lastName,mobile } = req.body;
         const password = await bcrypt.hash(plainPassword, 10);
         let userDetails: Prisma.UserCreateInput;
         if (middleName === null || !middleName) {
@@ -30,20 +31,10 @@ const register = async (req: Request, res: Response) => {
                 email,
                 firstName,
                 lastName,
-                password
+                password,
+                mobile
             }
         } else {
-            userDetails = {
-                username,
-                email,
-                firstName,
-                lastName,
-                middleName,
-                password
-            }
-        }
-
-        if (mobile) {
             userDetails = {
                 username,
                 email,
@@ -54,6 +45,8 @@ const register = async (req: Request, res: Response) => {
                 mobile
             }
         }
+
+       
         const newUser = await prisma.user.create({
             data: userDetails
         })
@@ -86,23 +79,23 @@ const login = async (req: Request, res: Response) => {
             }
         })
         if (!existingUser) {
+            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.IncorrectCredential)
             throw new notFound(constant.Auth.IncorrectCredential)
-            // return res.status(400).json(constant.Auth.IncorrectCredential)
         }
         const verifyPassword = await bcrypt.compare(password, existingUser?.password);
         if (!verifyPassword) {
+            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.IncorrectCredential)
             throw new BadRequest(constant.Auth.IncorrectCredential)
-            // return res.status(400).json(constant.Auth.IncorrectCredential)
         }
 
         if (!existingUser.isVerfiied) {
+            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.emailNotVerified)
             throw new BadRequest(constant.Auth.emailNotVerified, StatusCodes.UNAUTHORIZED)
-            // return res.status(400).json(constant.Auth.emailNotVerified)
         }
 
         if (existingUser.isLocked) {
+            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.accountLocked)
             throw new BadRequest(constant.Auth.emailNotVerified, StatusCodes.LOCKED)
-            // return res.status(400).json(constant.Auth.accountLocked)
         }
         //Generate Jwt Tokens
         const userData: Object = { username, userId: existingUser.id, email: existingUser.email, role: existingUser.role };
@@ -122,15 +115,16 @@ const verifyEmail = async (req: Request, res: Response) => {
         try {
             const { token } = req.query;
             if (typeof token != 'string') {
+                res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.InvalidLink)
                 throw new BadRequest(constant.Auth.InvalidLink)
-                // return res.status(400).json(constant.Auth.InvalidLink)
             }
 
             const decodedToken = jwt.verify(token, process.env.EMAIL_TOKEN!);
 
             if (!decodedToken) {
+                res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.InvalidLink)
                 throw new BadRequest(constant.Auth.InvalidLink)
-                // return res.status(400).json(constant.Auth.InvalidLink)
+                
             }
             const { email } = decodedToken as JwtPayload;
             const existingUser = await prisma.user.findUnique({
@@ -139,8 +133,9 @@ const verifyEmail = async (req: Request, res: Response) => {
                 }
             });
             if (!existingUser) {
+                res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.UserNotFound)
                 throw new notFound(constant.Auth.UserNotFound)
-                // return res.status(400).json(constant.Auth.UserNotFound)
+                
             }
             const verifyUserEmail = await prisma.user.update({
                 where: { email },
@@ -176,7 +171,7 @@ const resetLink = async (req: Request, res: Response) => {
         //send email with reset Link
         const html = `<h3>Hello,${getUser?.username}</h3>
         <p>You have requested to reset your password, Click the link below to reset your password</p>
-         <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/reset-password?token=${resetLink}"> verify email </a>`
+         <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/reset-password?token=${resetLink}"> Reset Password </a>`
         const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.PASSWORD_RESET, html);
         const emailData = await emailHelper.emailConfirmation(data)
         emailQueue.add('emailJob', emailData);
@@ -193,20 +188,22 @@ const resetPassword = async (req: Request, res: Response) => {
         const { token } = req.query;
         const { plainPassword, confirmPassword } = req.body;
         if (typeof token != 'string') {
+            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.InvalidLink)
             throw new BadRequest(constant.Auth.InvalidLink)
-            // return res.status(400).json(constant.Auth.InvalidLink)
+           
         }
         const decodedLink = jwt.verify(token, process.env.RESET_LINK!)
         const { email } = decodedLink as jwt.JwtPayload
         const userExist = await prisma.user.findUnique({ where: { email } });
         if (!userExist) {
+            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.UserNotFound)
             throw new notFound(constant.Auth.UserNotFound)
-            // return res.status(400).json(constant.Auth.UserNotFound)
+            
         }
 
-        // if (plainPassword !== confirmPassword) {
-        //     return res.status(400).json(constant.Auth.passwordMatchError);
-        // }
+        if (plainPassword !== confirmPassword) {
+            return res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.passwordMatchError);
+        }
 
         const password = await bcrypt.hash(plainPassword, 10);
         await prisma.user.update({
@@ -234,8 +231,8 @@ const token = async (req: Request, res: Response) => {
             }
         });
         if (!findUser) {
+            res.status(StatusCodes.BAD_REQUEST).json({ success: false, msg: constant.Auth.INVALIDUSER })
             throw new notFound(constant.Auth.INVALIDUSER)
-            // return res.status(400).json({ success: false, msg: constant.Auth.INVALIDUSER })
         }
 
         const userData: Object = { email: findUser?.email, role: findUser?.role, userId: findUser?.id, username: findUser?.username };
@@ -251,12 +248,12 @@ const token = async (req: Request, res: Response) => {
 const adminCreateUser = async (req: Request, res: Response) => {
     try {
 
-        const { email, firstName, lastName } = req.body;
+        const { email, firstName, lastName,mobile } = req.body;
         const emailExist = await prisma.user.findUnique({
             where: { email }
         });
         if (emailExist) {
-            return res.status(400).json(constant.Auth.EmailError)
+            return res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.EmailError)
         }
         const password = generator.generate({
             length: 10,
@@ -271,7 +268,8 @@ const adminCreateUser = async (req: Request, res: Response) => {
                 password,
                 role: "EDITOR",
                 firstName,
-                lastName
+                lastName,
+                mobile
             }
         });
         // send email
@@ -285,7 +283,7 @@ const adminCreateUser = async (req: Request, res: Response) => {
         const emailData = await emailHelper.emailConfirmation(data)
         await emailQueue.add('emailJob', emailData);
         if (newUser) {
-            res.status(201).json({ success: true, data: newUser })
+            res.status(StatusCodes.CREATED).json({ success: true, data: newUser })
         }
 
     } catch (error) {

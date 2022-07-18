@@ -28,6 +28,7 @@ const UserRequestRules =
                 
                 return Promise.reject('Email already in use');
             }
+            return true;
         }),
 
         body('username').custom(async value => {
@@ -39,9 +40,10 @@ const UserRequestRules =
             if (user) {
                 return Promise.reject('Username already in use');
             }
+            return true
         }),
 
     ]
 
 
-export default { UserRequestRules }
+export default UserRequestRules 

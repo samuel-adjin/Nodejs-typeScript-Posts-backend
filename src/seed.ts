@@ -25,7 +25,8 @@ const seedAdmin = async () => {
             role: "ADMIN",
             isVerfiied: true,
             firstName: "Admin",
-            lastName:"Admin"
+            lastName:"Admin",
+            mobile:"0573095386"
         }
         await prisma.user.create({
             data: AdminDetails

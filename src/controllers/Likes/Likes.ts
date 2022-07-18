@@ -41,7 +41,7 @@ const likeOrUnlikePost = async (req: Request, res: Response) => {
 }
 
 
-const getAPostComments = async (req:Request,res:Response)=>{
+const getAPostLikes = async (req:Request,res:Response)=>{
     try {
         const{id:postId} = req.params;
         const likes = prisma.like.findMany({
@@ -55,4 +55,4 @@ const getAPostComments = async (req:Request,res:Response)=>{
     }
 }
 
-export default { likeOrUnlikePost,getAPostComments }
+export default { likeOrUnlikePost,getAPostLikes }

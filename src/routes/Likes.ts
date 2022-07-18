@@ -5,6 +5,6 @@ const router = Router();
 
 
 router.route('/').post(likes.likeOrUnlikePost)
-router.route('/:id').get(likes.getAPostComments)
+router.route('/:id').get(likes.getAPostLikes)
 
 export default router;
