@@ -120,15 +120,11 @@ const addRole = async (req: Request, res: Response) => {
                 id: parseInt(id)
             },
             data: {
-                role
+                role : role
             },
-            select: {
-                email: true,
-                username: true,
-                id: true,
-                role: true
-            }
+           
         });
+      
         if (!User) {
             throw new notFound(constant.USER.ACTION_ERROR)
             // return res.status(200).json(constant.USER.ACTION_ERROR)
@@ -157,12 +153,7 @@ const lockUserAccountStatus = async (req: Request, res: Response) => {
             data: {
                 isLocked: lock
             },
-            select: {
-                email: true,
-                username: true,
-                id: true,
-                role: true
-            }
+            
         });
         if (!findUser) {
             throw new notFound(constant.USER.ACTION_ERROR)
@@ -286,7 +277,9 @@ const UpdateUserDescription = async (req: Request, res: Response) => {
 const updateProfileImage = async (req: Request, res: Response) => {
     try {
         //before a user can change dp check if they have a previous dp if yes grab the id and delete the old one before updating 
-        const { image } = req.body
+       logger.debug("herr")
+        const  image  = req.body.image as string
+    
         const hasProfile = await prisma.user.findUnique({
             where: {
                 id: req.user?.userId
@@ -294,6 +287,7 @@ const updateProfileImage = async (req: Request, res: Response) => {
         });
         //if user does not have a profile pic
         if (hasProfile?.profile === null) {
+            logger.debug("In if")
             const updateProfilePic = await updateProfile(image, req)
             return res.status(StatusCodes.OK).json({ success: true, data: updateProfilePic })
         }

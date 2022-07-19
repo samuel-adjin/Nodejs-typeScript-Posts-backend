@@ -1,9 +1,13 @@
 import nodemailer from 'nodemailer';
 import nodemailerSendgrid from 'nodemailer-sendgrid';
+import { Address, AttachmentLike, Options } from 'nodemailer/lib/mailer';
+import { Readable } from 'nodemailer/lib/xoauth2';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
 
-const emailConfirmation = async  (msg:Object)=>{
+const emailConfirmation = async  (msg: Options)=>{
     const transport = nodemailer.createTransport(
         nodemailerSendgrid({
             apiKey: process.env.SENDGRID_API_KEY!
@@ -15,12 +19,13 @@ const emailConfirmation = async  (msg:Object)=>{
 
 
 
-const emailData = (from:String, to:string, subject:string,html:string) =>{
+const emailData = (from:string | Address | undefined, to:string | Address | Array<string | Address> | undefined, subject:string | undefined,html:string | Buffer | Readable | AttachmentLike | undefined) =>{
     const msg ={
         from: from,
         to: to,
         subject: subject,
-        html: html
+        html: html,
+        
     };
     return msg;
 }
