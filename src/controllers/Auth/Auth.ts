@@ -4,7 +4,6 @@ import constant from "../../constant/constant";
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import emailHelper from '../../helpers/email';
-import emailQueue from '../../jobs/emailJob';
 import jwtHelper from '../../helpers/jwt';
 import { StatusCodes } from "http-status-codes";
 import logger from "../../loggers/logger";
@@ -59,11 +58,9 @@ const register = async (req: Request, res: Response) => {
 
         const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.EMAIL_SUBJECT, html);
 
-        await baseQueue.add('email',data)
+
         if (newUser) {
-          
-            // const emailData = await emailHelper.emailConfirmation(data)
-            // await emailQueue.add('emailJob', emailData);
+            await baseQueue.add('email', data)
             res.status(StatusCodes.CREATED).json({ success: true, data: newUser })
         }
     } catch (error) {
@@ -176,8 +173,7 @@ const resetLink = async (req: Request, res: Response) => {
         <p>You have requested to reset your password, Click the link below to reset your password</p>
          <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/reset-password?token=${resetLink}"> Reset Password </a>`
         const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.PASSWORD_RESET, html);
-        const emailData = await emailHelper.emailConfirmation(data)
-        emailQueue.add('emailJob', emailData);
+        await baseQueue.add('email', data)
         res.status(StatusCodes.OK).json({ success: true, msg: constant.EMAIL.RESET_SUCCESS })
     } catch (error) {
         logger.error("Password reset link failed", error)
@@ -283,8 +279,7 @@ const adminCreateUser = async (req: Request, res: Response) => {
 
         const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.EMAIL_SUBJECT, html);
 
-        const emailData = await emailHelper.emailConfirmation(data)
-        await emailQueue.add('emailJob', emailData);
+        await baseQueue.add('email', data)
         if (newUser) {
             res.status(StatusCodes.CREATED).json({ success: true, data: newUser })
         }
