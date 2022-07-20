@@ -5,9 +5,10 @@ import UserRequestValidation from "../validators/UserRequestValidation"
 // import loginRequestRules from '../validators/LoginRequestRules'
 import middleware from "../middleware/authMiddleware"
 
+
 const router = Router();
 
-router.route('/register').post( auth.register);
+router.route('/register').post(UserRequestRules,UserRequestValidation, auth.register);
 router.route('/login').post(auth.login);
 router.route('/verify-email').post(auth.verifyEmail);
 router.route('/reset-link').post(auth.resetLink);

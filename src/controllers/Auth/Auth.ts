@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import constant from "../../constant/constant";
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
@@ -15,11 +15,12 @@ import baseQueue from '../../jobs/baseQueue'
 
 dotenv.config();
 import { Prisma, PrismaClient } from '@prisma/client'
+import { nextTick } from "process";
 const prisma = new PrismaClient()
 
 
 
-const register = async (req: Request, res: Response) => {
+const register = async (req: Request, res: Response,next:NextFunction) => {
     try {
         logger.debug("testing register")
         const { username, email, plainPassword, firstName, middleName, lastName, mobile } = req.body;
@@ -65,12 +66,13 @@ const register = async (req: Request, res: Response) => {
         }
     } catch (error) {
         logger.error("User not registered", error)
+        next(error)
     }
 
 }
 
 //login
-const login = async (req: Request, res: Response) => {
+const login = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { username, password } = req.body;
         const existingUser = await prisma.user.findUnique({
@@ -79,22 +81,18 @@ const login = async (req: Request, res: Response) => {
             }
         })
         if (!existingUser) {
-            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.IncorrectCredential)
             throw new notFound(constant.Auth.IncorrectCredential)
         }
         const verifyPassword = await bcrypt.compare(password, existingUser?.password);
         if (!verifyPassword) {
-            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.IncorrectCredential)
             throw new BadRequest(constant.Auth.IncorrectCredential)
         }
 
         if (!existingUser.isVerfiied) {
-            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.emailNotVerified)
             throw new BadRequest(constant.Auth.emailNotVerified, StatusCodes.UNAUTHORIZED)
         }
 
         if (existingUser.isLocked) {
-            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.accountLocked)
             throw new BadRequest(constant.Auth.emailNotVerified, StatusCodes.LOCKED)
         }
         //Generate Jwt Tokens
@@ -104,13 +102,14 @@ const login = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: { access_token, refresh_token } });
 
     } catch (error) {
-        logger.error("User cannot login", error)
+        logger.error("User cannot login", error);
+        next(error)
     }
 }
 
 
 // verify email
-const verifyEmail = async (req: Request, res: Response) => {
+const verifyEmail = async (req: Request, res: Response,next:NextFunction) => {
     {
         try {
             const { token } = req.query;
@@ -150,6 +149,7 @@ const verifyEmail = async (req: Request, res: Response) => {
 
         } catch (error) {
             logger.error("Email verification failed", error)
+            next(error)
 
         }
     }
@@ -157,7 +157,7 @@ const verifyEmail = async (req: Request, res: Response) => {
 
 
 //ResetLink
-const resetLink = async (req: Request, res: Response) => {
+const resetLink = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { email } = req.body;
         const getUser = await prisma.user.findUnique({
@@ -177,12 +177,13 @@ const resetLink = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, msg: constant.EMAIL.RESET_SUCCESS })
     } catch (error) {
         logger.error("Password reset link failed", error)
+        next(error)
     }
 }
 
 
 //password reset
-const resetPassword = async (req: Request, res: Response) => {
+const resetPassword = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { token } = req.query;
         const { plainPassword, confirmPassword } = req.body;
@@ -214,14 +215,14 @@ const resetPassword = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, msg: constant.Auth.PasswordResetSuccess })
     } catch (error) {
         logger.error("Password reset failed", error)
-
+        next(error)
     }
 
 }
 
 
 //generate tokens using refresh token
-const token = async (req: Request, res: Response) => {
+const token = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const id = req.user?.userId;
         const findUser = await prisma.user.findUnique({
@@ -240,11 +241,12 @@ const token = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: { access_token, refresh_token } });
     } catch (error) {
         logger.error("refresh token generation failed", error)
+        next(error)
     }
 }
 
 
-const adminCreateUser = async (req: Request, res: Response) => {
+const adminCreateUser = async (req: Request, res: Response,next:NextFunction) => {
     try {
 
         const { email, firstName, lastName, mobile } = req.body;
@@ -285,7 +287,8 @@ const adminCreateUser = async (req: Request, res: Response) => {
         }
 
     } catch (error) {
-        console.log({ error })
+        logger.error("Admin creation of user failed",error)
+        next(error)
     }
 }
 

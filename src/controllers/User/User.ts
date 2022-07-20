@@ -1,10 +1,12 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import logger from "../../loggers/logger"
 import { StatusCodes } from "http-status-codes";
 import constant from '../../constant/constant'
 import notFound from "../../errors/ApiError404"
 import internalServerError from "../../errors/InternalError"
+import multer from '../../utils/multer';
+
 
 import cloudinary from "../../utils/cloudinary";
 
@@ -43,9 +45,9 @@ const fetchAllNotUser = async (req: Request, res: Response) => {
 
 const fetchAllUsers = async (req: Request, res: Response) => {
     try {
-       
+
         const users = await prisma.user.findMany({});
-       return res.status(StatusCodes.OK).json({ success: true, data: users })
+        return res.status(StatusCodes.OK).json({ success: true, data: users })
     } catch (error) {
         logger.error("Can't fetch users", error)
     }
@@ -120,11 +122,11 @@ const addRole = async (req: Request, res: Response) => {
                 id: parseInt(id)
             },
             data: {
-                role : role
+                role: role
             },
-           
+
         });
-      
+
         if (!User) {
             throw new notFound(constant.USER.ACTION_ERROR)
             // return res.status(200).json(constant.USER.ACTION_ERROR)
@@ -153,7 +155,7 @@ const lockUserAccountStatus = async (req: Request, res: Response) => {
             data: {
                 isLocked: lock
             },
-            
+
         });
         if (!findUser) {
             throw new notFound(constant.USER.ACTION_ERROR)
@@ -277,24 +279,24 @@ const UpdateUserDescription = async (req: Request, res: Response) => {
 const updateProfileImage = async (req: Request, res: Response) => {
     try {
         //before a user can change dp check if they have a previous dp if yes grab the id and delete the old one before updating 
-       logger.debug("herr")
-        const  image  = req.body.image as string
-    
+        logger.debug("herr")
+
+
         const hasProfile = await prisma.user.findUnique({
             where: {
                 id: req.user?.userId
             }
         });
         //if user does not have a profile pic
-        if (hasProfile?.profile === null) {
+        if (hasProfile?.profileUrl === null && hasProfile?.image_id === null) {
             logger.debug("In if")
-            const updateProfilePic = await updateProfile(image, req)
+            const updateProfilePic = await updateProfile(req)
             return res.status(StatusCodes.OK).json({ success: true, data: updateProfilePic })
         }
         // delete old profile in cloudinary before changing to new one
         const deleteOldPic = await deleteCloudinaryImage(req);
         if (deleteOldPic) {
-            const updateProfilePic = await updateProfile(image, req)
+            const updateProfilePic = await updateProfile(req)
             return res.status(StatusCodes.OK).json({ success: true, data: updateProfilePic })
         }
 
@@ -316,7 +318,8 @@ const deleteProfile = async (req: Request, res: Response) => {
                 id: req.user?.userId
             },
             data: {
-                profile: null
+                profileUrl: null,
+                image_id: null
             }
         })
         return res.status(StatusCodes.OK).json({ success: true, data: deleteImage })
@@ -444,17 +447,23 @@ const fetchAllEditorsPaginated = async (req: Request, res: Response) => {
 
 
 
-const updateProfile = async (image: string, req: Request) => {
-    const profile = await cloudinary.uploader.upload(image, {
+const updateProfile = async (req: Request) => {
+
+
+    const profile = await cloudinary.uploader.upload(req.file?.path!, {
         folder: "profile-pic"
     })
+
+    //delete image from filesystem once uploaded to cloudinary
+    multer.deleteFile(req.file?.path!)
 
     const updateProfilePic = await prisma.user.update({
         where: {
             id: req.user?.userId
         },
         data: {
-            profile: profile.public_id
+            image_id: profile.public_id,
+            profileUrl: profile.secure_url
         }
     })
 
@@ -469,13 +478,26 @@ const deleteCloudinaryImage = async (req: Request) => {
             id: req.user?.userId
         }
     })
-    const deleteOldPic = await cloudinary.uploader.destroy(getUser?.profile!, { resource_type: "image" }, (result, error) => {
+    const deleteOldPic = await cloudinary.uploader.destroy(getUser?.image_id!, { resource_type: "image" }, (result, error) => {
         console.log(result, error)
     })
 
     return deleteOldPic;
 }
 
+
+const multerTest = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await cloudinary.uploader.upload(req.file?.path!, {
+            folder: "profile-pic"
+        })
+
+        multer.deleteFile(req.file?.path!)
+    } catch (error) {
+        logger.error("error testing multer", error)
+        return next(error)
+    }
+}
 
 export default {
     fetchAllNormalUsers,
@@ -493,7 +515,8 @@ export default {
     deleteProfile,
     fetchAllNormalUsersPaginated,
     fetchAllUsersPaginated,
-    fetchAllEditorsPaginated
+    fetchAllEditorsPaginated,
+    multerTest
 
 };
 

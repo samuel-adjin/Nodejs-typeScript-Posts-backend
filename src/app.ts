@@ -8,6 +8,8 @@ import errorHandler from "./errors/errorHandler"
 import userRoute from "./routes/User"
 import authRoute from "./routes/Auth"
 import postRoute from "./routes/Post"
+import globalErrorHandler from "./middleware/global_error_handler"
+
 
 
 dotenv.config();
@@ -18,7 +20,7 @@ app.use(helmet())
 app.use(morgan('combined'))
 app.use(urlencoded({ extended: false }));
 
-app.use(errorHandlerMiddleware)
+// app.use(errorHandlerMiddleware)
 
 
 // healthCheck
@@ -41,4 +43,7 @@ process.on('uncaughtException', (error: Error) => {
 process.on('unhandledRejection', (reason: Error, promise: Promise<any>) => {
   throw reason;
 });
+
+app.use(globalErrorHandler)
+
 export default app;

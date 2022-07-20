@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import logger from "../../loggers/logger"
 import { StatusCodes } from "http-status-codes";
 import internalServerError from "../../errors/InternalError"
-
+import multer from '../../utils/multer';
 import cloudinary from "../../utils/cloudinary";
 
 const prisma = new PrismaClient();
@@ -59,16 +59,19 @@ const fetchAllunPublishedPosts = async (req: Request, res: Response) => {
 
 const createPost = async (req: Request, res: Response) => {
     try {
-        const { title, content, image } = req.body;
-        const picture = await cloudinary.uploader.upload(image, {
+        const { title, content} = req.body;
+        const imageContent = await cloudinary.uploader.upload(req.file?.path!, {
             folder: "posts"
         })
+
+        multer.deleteFile(req.file?.path!)
 
         const post = await prisma.post.create({
             data: {
                 title,
                 content,
-                picture: picture.public_id,
+                image_id: imageContent.public_id,
+                imageUrl:imageContent.url,
                 userId: req.user?.userId!
             }
         })
@@ -207,7 +210,7 @@ const deleteCloudinaryImage = async (req: Request, postId: string) => {
             id: parseInt(postId)
         }
     })
-    const deleteOldPic = await cloudinary.uploader.destroy(post?.picture!, { resource_type: "image" }, (result, error) => {
+    const deleteOldPic = await cloudinary.uploader.destroy(post?.image_id!, { resource_type: "image" }, (result, error) => {
         console.log(result, error)
     })
 
@@ -219,12 +222,13 @@ const updatePicture = async (image: string, req: Request) => {
         folder: "posts"
     })
 
-    const updateProfilePic = await prisma.user.update({
+    const updateProfilePic = await prisma.post.update({
         where: {
             id: req.user?.userId
         },
         data: {
-            profile: profile.public_id
+            image_id: profile.public_id,
+            imageUrl: profile.url
         }
     })
 
