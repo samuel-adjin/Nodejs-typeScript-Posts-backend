@@ -8,11 +8,11 @@ import multer from '../utils/multer';
 
 
 const router = Router();
-router.route('/multer').get(multer.upload.single('image'),user.multerTest);
 router.route('/').get(user.fetchAllNormalUsers);
 router.route('/all-users-paginate').get(middleware.verifyToken, user.fetchAllUsersPaginated);
 router.route('/not-users').get(middleware.verifyToken, user.fetchAllNotUser);
 router.route('/all-users').get(middleware.verifyToken, user.fetchAllUsers);
+router.route('/del-user-profile').patch(middleware.verifyToken, user.deleteProfile);
 
 router.route('/update-record').put(middleware.verifyToken, user.updateUserRecord);
 router.route('/delete-many-users').delete(middleware.verifyToken, user.deleteManyUsers)

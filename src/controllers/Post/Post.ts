@@ -1,26 +1,29 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import logger from "../../loggers/logger"
 import { StatusCodes } from "http-status-codes";
 import internalServerError from "../../errors/InternalError"
+import notFound from "../../errors/ApiError404"
+
 import multer from '../../utils/multer';
 import cloudinary from "../../utils/cloudinary";
 
 const prisma = new PrismaClient();
 
-const fetchAllPosts = async (req: Request, res: Response) => {
+const fetchAllPosts = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const posts = await prisma.post.findMany({});
         res.status(StatusCodes.OK).json({ success: true, data: posts });
     } catch (error) {
         logger.error("Failed to fetch all posts", error)
+        next(error)
     }
 }
 
-const getAPost = async (req: Request, res: Response) => {
+const getAPost = async (req: Request, res: Response,next:NextFunction) => {
     try {
-        const { id: postId } = req.body
-        const post = prisma.post.findUnique({
+        const { id: postId } = req.params
+        const post = await prisma.post.findUnique({
             where: {
                 id: parseInt(postId)
             }
@@ -28,11 +31,13 @@ const getAPost = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: post });
     } catch (error) {
         logger.error("Failed to fetch a post", error)
+        next(error)
     }
 }
 
-const fetchAllPublishedPosts = async (req: Request, res: Response) => {
+const fetchAllPublishedPosts = async (req: Request, res: Response,next:NextFunction) => {
     try {
+        logger.debug("here")
         const posts = await prisma.post.findMany({
             where: {
                 isPublished: true
@@ -41,10 +46,11 @@ const fetchAllPublishedPosts = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: posts });
     } catch (error) {
         logger.error("Failed to fetch all posts", error)
+        next(error)
     }
 }
 
-const fetchAllunPublishedPosts = async (req: Request, res: Response) => {
+const fetchAllunPublishedPosts = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const posts = await prisma.post.findMany({
             where: {
@@ -54,16 +60,16 @@ const fetchAllunPublishedPosts = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: posts });
     } catch (error) {
         logger.error("Failed to fetch all posts", error)
+        next(error)
     }
 }
 
-const createPost = async (req: Request, res: Response) => {
+const createPost = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { title, content} = req.body;
         const imageContent = await cloudinary.uploader.upload(req.file?.path!, {
             folder: "posts"
         })
-
         multer.deleteFile(req.file?.path!)
 
         const post = await prisma.post.create({
@@ -78,13 +84,22 @@ const createPost = async (req: Request, res: Response) => {
         res.status(StatusCodes.CREATED).json({ success: true, data: post });
     } catch (error) {
         logger.error("Failed to create post", error)
+        next(error)
     }
 }
 
-const updatePost = async (req: Request, res: Response) => {
+const updatePost = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { id: postId } = req.params;
         const { title, content } = req.body;
+        const postExist = await prisma.post.findUnique({
+            where:{
+                id: parseInt(postId)
+            }
+        })
+        if(!postExist){
+            throw new notFound("Post not found")
+        }
         const post = await prisma.post.update({
             where: {
                 id: parseInt(postId)
@@ -97,32 +112,38 @@ const updatePost = async (req: Request, res: Response) => {
         res.status(StatusCodes.CREATED).json({ success: true, data: post });
     } catch (error) {
         logger.error("Failed to update post", error)
+        next(error)
     }
 }
 
-const changeImage = async (req: Request, res: Response) => {
+const changeImage = async (req: Request, res: Response,next:NextFunction) => {
     try {
-        const { image } = req.body;
         const { id: postId } = req.params;
         let isCloudDeleted = await deleteCloudinaryImage(req, postId);
         if (!isCloudDeleted) {
             throw new internalServerError("Failed to deleted from cloudinary")
         }
-        const changedPic = await updatePicture(image, req)
+        const changedPic = await updatePicture(postId,req)
         res.status(StatusCodes.OK).json({ success: true, data: changedPic });
     } catch (error) {
         logger.error("Changing Image failed", error)
+        next(error)
     }
+
 }
 
-const publishOrUnpublishPost = async (req: Request, res: Response) => {
+const publishOrUnpublishPost = async (req: Request, res: Response,next:NextFunction) => {
     try {
-        const { id: postId } = req.body;
+        const { id: postId } = req.params;
         const getPost = await prisma.post.findUnique({
             where: {
                 id: parseInt(postId)
             }
         })
+
+        if(!getPost){
+            throw new notFound("Post not Found")
+        }
 
         let isPublished: boolean = !getPost?.isPublished
         const post = await prisma.post.update({
@@ -137,12 +158,13 @@ const publishOrUnpublishPost = async (req: Request, res: Response) => {
 
     } catch (error) {
         logger.error("Changing Image failed", error)
+        next(error)
     }
 }
 
 
 
-const fetchAllPostPaginated = async (req: Request, res: Response) => {
+const fetchAllPostPaginated = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const perPage = parseInt((req.query.limit as string), 10) || 2;
         const cursor = req.query.cursor as string || undefined;
@@ -197,6 +219,7 @@ const fetchAllPostPaginated = async (req: Request, res: Response) => {
         });
     } catch (error) {
         logger.error("Failed to fetch paginated all posts", error)
+        next(error)
     }
 }
 
@@ -217,14 +240,14 @@ const deleteCloudinaryImage = async (req: Request, postId: string) => {
     return deleteOldPic;
 }
 
-const updatePicture = async (image: string, req: Request) => {
-    const profile = await cloudinary.uploader.upload(image, {
+const updatePicture = async (postId,req: Request) => {
+    const profile = await cloudinary.uploader.upload(req.file?.path!, {
         folder: "posts"
     })
 
-    const updateProfilePic = await prisma.post.update({
+    const updatePostPic = await prisma.post.update({
         where: {
-            id: req.user?.userId
+            id: parseInt(postId)
         },
         data: {
             image_id: profile.public_id,
@@ -232,10 +255,10 @@ const updatePicture = async (image: string, req: Request) => {
         }
     })
 
-    return updateProfilePic;
+    return updatePostPic;
 }
 
-const getUserSpecificPost = async (req: Request, res: Response) => {
+const getUserSpecificPost = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const getAllUserPosts = await prisma.post.findMany({
             where: {
@@ -245,17 +268,12 @@ const getUserSpecificPost = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: getAllUserPosts })
     } catch (error) {
         logger.error("Failed to get user specific posts", error)
+        next(error)
     }
 }
 
 
-const approveOrDisapprove = async (req: Request, res: Response) => {
-    try {
 
-    } catch (error) {
-        logger.error("Failed to approve or disapprove post for publishing", error)
-    }
-}
 
 
 export default
@@ -269,7 +287,6 @@ export default
         changeImage,
         publishOrUnpublishPost,
         getUserSpecificPost,
-        approveOrDisapprove,
         fetchAllPostPaginated
 
     }

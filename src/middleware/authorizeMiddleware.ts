@@ -24,10 +24,10 @@ const checkRole = async (role: string[] | string, req: Request, res: Response, n
             return next();
         }
         throw new BadRequest("Invalid user", StatusCodes.UNAUTHORIZED)
-        // return res.status(StatusCodes.UNAUTHORIZED).json({success:false,msg:"Invalid user"})
 
     } catch (error) {
         logger.error("Failed to check role", error)
+        next(error)
     }
 }
 

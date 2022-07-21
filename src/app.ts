@@ -2,14 +2,12 @@ import express, { Application, Request, Response, urlencoded } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from 'dotenv';
-import errorHandlerMiddleware from "./middleware/ErrorHandlerMiddleware";
 import morganHttp from "./middleware/morganMiddleware";
-import errorHandler from "./errors/errorHandler"
 import userRoute from "./routes/User"
 import authRoute from "./routes/Auth"
 import postRoute from "./routes/Post"
 import globalErrorHandler from "./middleware/global_error_handler"
-
+import likesRoute from "./routes/Likes"
 
 
 dotenv.config();
@@ -20,8 +18,6 @@ app.use(helmet())
 app.use(morgan('combined'))
 app.use(urlencoded({ extended: false }));
 
-// app.use(errorHandlerMiddleware)
-
 
 // healthCheck
 app.get('/health', (req: Request, res: Response) => {
@@ -31,18 +27,8 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/v1/user', userRoute)
 app.use('/v1/auth', authRoute)
 app.use('/v1/post', postRoute)
+app.use('/v1/likes', likesRoute)
 
-
-process.on('uncaughtException', (error: Error) => {
-  errorHandler.handleError(error);
-  if (!errorHandler.isTrustedError(error)) {
-    process.exit(1);
-  }
-});
-
-process.on('unhandledRejection', (reason: Error, promise: Promise<any>) => {
-  throw reason;
-});
 
 app.use(globalErrorHandler)
 

@@ -12,7 +12,7 @@ import cloudinary from "../../utils/cloudinary";
 
 const prisma = new PrismaClient();
 
-const fetchAllNormalUsers = async (req: Request, res: Response) => {
+const fetchAllNormalUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const users = await prisma.user.findMany({
             where: {
@@ -23,12 +23,13 @@ const fetchAllNormalUsers = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: users })
     } catch (error) {
         logger.error("Can't fetch normal Users", error)
+        next(error)
     }
 
 }
 
 
-const fetchAllNotUser = async (req: Request, res: Response) => {
+const fetchAllNotUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const users = await prisma.user.findMany({
             where: {
@@ -40,22 +41,24 @@ const fetchAllNotUser = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: users })
     } catch (error) {
         logger.error("Can't fetch non Users", error)
+        next(error)
     }
 }
 
-const fetchAllUsers = async (req: Request, res: Response) => {
+const fetchAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
 
         const users = await prisma.user.findMany({});
         return res.status(StatusCodes.OK).json({ success: true, data: users })
     } catch (error) {
         logger.error("Can't fetch users", error)
+        next(error)
     }
 }
 
 
 
-const findUser = async (req: Request, res: Response) => {
+const findUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const User = await prisma.user.findUnique({
@@ -72,12 +75,13 @@ const findUser = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: User })
     } catch (error) {
         logger.error("Can't find User", error)
+        next(error)
     }
 }
 
 
 
-const updateUserRecord = async (req: Request, res: Response) => {
+const updateUserRecord = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, username, firstName, lastName, middleName } = req.body;
         let userDetails: Object;
@@ -105,15 +109,15 @@ const updateUserRecord = async (req: Request, res: Response) => {
         });
         if (!findUser) {
             throw new notFound(constant.USER.ACTION_ERROR)
-            // return res.status(200).json(constant.USER.ACTION_ERROR)
         }
         res.status(StatusCodes.OK).json({ success: true, data: findUser });
     } catch (error) {
         logger.error("Failed to Update user record", error)
+        next(error)
     }
 }
 
-const addRole = async (req: Request, res: Response) => {
+const addRole = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const { role } = req.body
@@ -129,17 +133,17 @@ const addRole = async (req: Request, res: Response) => {
 
         if (!User) {
             throw new notFound(constant.USER.ACTION_ERROR)
-            // return res.status(200).json(constant.USER.ACTION_ERROR)
         }
         res.status(StatusCodes.OK).json({ success: true, data: User });
 
     } catch (error) {
         logger.error("User role not added", error)
+        next(error)
     }
 }
 
 
-const lockUserAccountStatus = async (req: Request, res: Response) => {
+const lockUserAccountStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const getUser = await prisma.user.findUnique({
@@ -159,16 +163,16 @@ const lockUserAccountStatus = async (req: Request, res: Response) => {
         });
         if (!findUser) {
             throw new notFound(constant.USER.ACTION_ERROR)
-            // return res.status(200).json(constant.USER.ACTION_ERROR)
         }
         res.status(StatusCodes.OK).json({ success: true, data: findUser });
 
     } catch (error) {
         logger.error("User account can not be locked", error)
+        next(error)
     }
 }
 
-const deleteUser = async (req: Request, res: Response) => {
+const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const User = await prisma.user.delete({
@@ -178,16 +182,16 @@ const deleteUser = async (req: Request, res: Response) => {
         })
         if (!User) {
             throw new notFound(constant.USER.ACTION_ERROR)
-            // return res.status(200).json(constant.USER.ACTION_ERROR)
         }
         res.status(StatusCodes.OK).json({ sucess: true })
     } catch (error) {
         logger.error("User account not deleted", error)
+        next(error)
     }
 
 }
 
-const deleteManyUsers = async (req: Request, res: Response) => {
+const deleteManyUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
 
         const ids = req.body.id;
@@ -201,11 +205,12 @@ const deleteManyUsers = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ sucess: true })
     } catch (error) {
         logger.error("Bulk delete failed", error)
+        next(error)
     }
 }
 
 
-const searchUserByEmailOrUsername = async (req: Request, res: Response) => {
+const searchUserByEmailOrUsername = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { username } = req.body;
         let search: Object = {};
@@ -253,11 +258,11 @@ const searchUserByEmailOrUsername = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: Users })
     } catch (error) {
         logger.error("Error occured while searching for user", error)
-
+        next(error)
     }
 }
 
-const UpdateUserDescription = async (req: Request, res: Response) => {
+const UpdateUserDescription = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { description } = req.body;
         const updateRecord = await prisma.user.update(
@@ -273,15 +278,13 @@ const UpdateUserDescription = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ success: true, data: updateRecord })
     } catch (error) {
         logger.error("Error updating description", error)
+        next(error)
     }
 }
 
-const updateProfileImage = async (req: Request, res: Response) => {
+const updateProfileImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
         //before a user can change dp check if they have a previous dp if yes grab the id and delete the old one before updating 
-        logger.debug("herr")
-
-
         const hasProfile = await prisma.user.findUnique({
             where: {
                 id: req.user?.userId
@@ -289,7 +292,6 @@ const updateProfileImage = async (req: Request, res: Response) => {
         });
         //if user does not have a profile pic
         if (hasProfile?.profileUrl === null && hasProfile?.image_id === null) {
-            logger.debug("In if")
             const updateProfilePic = await updateProfile(req)
             return res.status(StatusCodes.OK).json({ success: true, data: updateProfilePic })
         }
@@ -303,10 +305,11 @@ const updateProfileImage = async (req: Request, res: Response) => {
 
     } catch (error) {
         logger.error("Error updating profile pic", error)
+        next(error)
     }
 }
 
-const deleteProfile = async (req: Request, res: Response) => {
+const deleteProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const profilePic = await deleteCloudinaryImage(req);
         if (!profilePic) {
@@ -326,13 +329,14 @@ const deleteProfile = async (req: Request, res: Response) => {
 
     } catch (error) {
         logger.error("failed to delete user profile pic", error)
+        next(error)
     }
 }
 
 
 
 
-const fetchAllUsersPaginated = async (req: Request, res: Response) => {
+const fetchAllUsersPaginated = async (req: Request, res: Response,next: NextFunction) => {
     try {
         const perPage = parseInt((req.query.limit as string), 10) || 2;
         let pageNumber = parseInt((req.query.pageNumber as string), 10) || 1;
@@ -364,10 +368,11 @@ const fetchAllUsersPaginated = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ sucess: true, data: pageInfo })
     } catch (error) {
         logger.error("error fetching all paginated  user records")
+        next(error)
     }
 }
 
-const fetchAllNormalUsersPaginated = async (req: Request, res: Response) => {
+const fetchAllNormalUsersPaginated = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const perPage = parseInt((req.query.limit as string), 10) || 2;
         let pageNumber = parseInt((req.query.pageNumber as string), 10) || 1;
@@ -403,11 +408,12 @@ const fetchAllNormalUsersPaginated = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ sucess: true, data: pageInfo })
     } catch (error) {
         logger.error("error fetching all normal paginated  user records")
+        next(error)
     }
 }
 
 
-const fetchAllEditorsPaginated = async (req: Request, res: Response) => {
+const fetchAllEditorsPaginated = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const perPage = parseInt((req.query.limit as string), 10) || 2;
         let pageNumber = parseInt((req.query.pageNumber as string), 10) || 1;
@@ -440,6 +446,7 @@ const fetchAllEditorsPaginated = async (req: Request, res: Response) => {
         res.status(StatusCodes.OK).json({ sucess: true, data: pageInfo })
     } catch (error) {
         logger.error("error fetching all normal paginated  user records")
+        next(error)
     }
 }
 
@@ -463,7 +470,7 @@ const updateProfile = async (req: Request) => {
         },
         data: {
             image_id: profile.public_id,
-            profileUrl: profile.secure_url
+            profileUrl: profile.url
         }
     })
 
@@ -486,19 +493,6 @@ const deleteCloudinaryImage = async (req: Request) => {
 }
 
 
-const multerTest = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const result = await cloudinary.uploader.upload(req.file?.path!, {
-            folder: "profile-pic"
-        })
-
-        multer.deleteFile(req.file?.path!)
-    } catch (error) {
-        logger.error("error testing multer", error)
-        return next(error)
-    }
-}
-
 export default {
     fetchAllNormalUsers,
     fetchAllNotUser,
@@ -516,8 +510,6 @@ export default {
     fetchAllNormalUsersPaginated,
     fetchAllUsersPaginated,
     fetchAllEditorsPaginated,
-    multerTest
-
 };
 
 

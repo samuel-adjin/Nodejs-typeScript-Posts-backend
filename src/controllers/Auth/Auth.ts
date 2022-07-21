@@ -15,14 +15,12 @@ import baseQueue from '../../jobs/baseQueue'
 
 dotenv.config();
 import { Prisma, PrismaClient } from '@prisma/client'
-import { nextTick } from "process";
 const prisma = new PrismaClient()
 
 
 
 const register = async (req: Request, res: Response,next:NextFunction) => {
     try {
-        logger.debug("testing register")
         const { username, email, plainPassword, firstName, middleName, lastName, mobile } = req.body;
         const password = await bcrypt.hash(plainPassword, 10);
         let userDetails: Prisma.UserCreateInput;
@@ -114,14 +112,12 @@ const verifyEmail = async (req: Request, res: Response,next:NextFunction) => {
         try {
             const { token } = req.query;
             if (typeof token != 'string') {
-                res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.InvalidLink)
                 throw new BadRequest(constant.Auth.InvalidLink)
             }
 
             const decodedToken = jwt.verify(token, process.env.EMAIL_TOKEN!);
 
             if (!decodedToken) {
-                res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.InvalidLink)
                 throw new BadRequest(constant.Auth.InvalidLink)
 
             }
@@ -132,7 +128,6 @@ const verifyEmail = async (req: Request, res: Response,next:NextFunction) => {
                 }
             });
             if (!existingUser) {
-                res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.UserNotFound)
                 throw new notFound(constant.Auth.UserNotFound)
 
             }
@@ -165,7 +160,6 @@ const resetLink = async (req: Request, res: Response,next:NextFunction) => {
         });
         if (!email) {
             throw new notFound(constant.Auth.InvalidEmail)
-            // return res.status(400).json(constant.Auth.InvalidEmail)
         }
         const resetLink = jwt.sign({ email }, process.env.RESET_LINK!);
         //send email with reset Link
@@ -188,7 +182,6 @@ const resetPassword = async (req: Request, res: Response,next:NextFunction) => {
         const { token } = req.query;
         const { plainPassword, confirmPassword } = req.body;
         if (typeof token != 'string') {
-            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.InvalidLink)
             throw new BadRequest(constant.Auth.InvalidLink)
 
         }
@@ -196,13 +189,12 @@ const resetPassword = async (req: Request, res: Response,next:NextFunction) => {
         const { email } = decodedLink as jwt.JwtPayload
         const userExist = await prisma.user.findUnique({ where: { email } });
         if (!userExist) {
-            res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.UserNotFound)
             throw new notFound(constant.Auth.UserNotFound)
 
         }
 
         if (plainPassword !== confirmPassword) {
-            return res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.passwordMatchError);
+            throw new BadRequest(constant.Auth.passwordMatchError)
         }
 
         const password = await bcrypt.hash(plainPassword, 10);
@@ -231,7 +223,6 @@ const token = async (req: Request, res: Response,next:NextFunction) => {
             }
         });
         if (!findUser) {
-            res.status(StatusCodes.BAD_REQUEST).json({ success: false, msg: constant.Auth.INVALIDUSER })
             throw new notFound(constant.Auth.INVALIDUSER)
         }
 
@@ -254,7 +245,7 @@ const adminCreateUser = async (req: Request, res: Response,next:NextFunction) =>
             where: { email }
         });
         if (emailExist) {
-            return res.status(StatusCodes.BAD_REQUEST).json(constant.Auth.EmailError)
+            throw new BadRequest(constant.Auth.EmailError)
         }
         const password = generator.generate({
             length: 10,

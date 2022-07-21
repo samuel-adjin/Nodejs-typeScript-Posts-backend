@@ -4,6 +4,8 @@ import post from "../controllers/Post/Post"
 // import PostImageRule from "../validators/PostImageRule"
 // import PostUpdateRule from "../validators/PostUpdateRules"
 // import validation from "../validators/UserRequestValidation"
+import middleware from "../middleware/authMiddleware"
+import multer from '../utils/multer';
 
 
 
@@ -11,13 +13,15 @@ import post from "../controllers/Post/Post"
 
 const router = Router();
 
-router.route('/').get(post.fetchAllPosts).post(post.createPost)
-router.route('/:id').get(post.getAPost).patch(post.updatePost)
-router.route('all-published').get(post.fetchAllPublishedPosts)
-router.route('').get(post.fetchAllunPublishedPosts)
-router.route('change-image/:id').post(post.changeImage)
-router.route('publish').patch(post.publishOrUnpublishPost)
-router.route('post-paginate').get(post.fetchAllPostPaginated)
-router.route('user-posts').get(post.getUserSpecificPost)
+router.route('/').get(post.fetchAllPosts).post(middleware.verifyToken,multer.upload.single('image'),post.createPost)
+router.route('/all-published').get(middleware.verifyToken,post.fetchAllPublishedPosts)
+router.route('/all-unpublished').get(middleware.verifyToken,post.fetchAllunPublishedPosts)
+router.route('/publish-unpublish/:id').patch(middleware.verifyToken,post.publishOrUnpublishPost)
+router.route('/post-paginate').get(post.fetchAllPostPaginated)
+router.route('/user-posts').get(middleware.verifyToken,post.getUserSpecificPost)
+router.route('/:id').get(middleware.verifyToken,post.getAPost).patch(middleware.verifyToken,post.updatePost)
+router.route('/change-image/:id').post(middleware.verifyToken,multer.upload.single('image'),post.changeImage)
+
+
 
 export default router;
