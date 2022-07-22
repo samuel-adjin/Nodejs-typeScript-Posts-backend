@@ -194,7 +194,7 @@ const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
 const deleteManyUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
 
-        const ids = req.body.id;
+        const ids = (req.body.id as any);
         await prisma.user.deleteMany({
             where: {
                 id: {

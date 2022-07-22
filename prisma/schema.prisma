@@ -41,6 +41,7 @@ model Post {
   image_id    String
   isPublished Boolean   @default(false)
   user        User      @relation(fields: [userId], references: [id])
+
   userId      Int
   like        Like[]
   comment     Comment[]
