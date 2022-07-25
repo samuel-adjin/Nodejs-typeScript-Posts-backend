@@ -10,21 +10,19 @@ const bestEdit = async () => {
         let month: number = date.getMonth();
         let firstDayOfMonth: Date = new Date(year, month - 1, 1)
         let LastDayOfMonth: Date = new Date(year, month, 0)
-        let dummyfirst = new Date(year, 6, 1)
-        let dummylast = new Date(year, 7, 0)
+       
 
 
         const PostWithinRange = await prisma.post.findMany({
             where: {
                 updated_at: {
-                    // gte:LastDayOfMonth,
-                    // lte:LastDayOfMonth
-                    gte: dummyfirst,
-                    lte: dummylast
+                    gte:firstDayOfMonth,
+                    lte:LastDayOfMonth
                 },
-                isPublished: true
+                isPublished: true,
             }
-        })
+        });
+
         const userIds = PostWithinRange.map(d => d.userId);
         let count: Object = {};
         userIds.forEach(user => {
