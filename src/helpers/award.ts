@@ -1,14 +1,8 @@
-// get the user with the most post in a particular month
-// get all users and their number of posts
-//fetch all post for a month and pluck all the ids 
-// compare re-construct an array. chck ids against post 
-// maintain a counter to track number of user posts as you loop
 
 import { PrismaClient } from "@prisma/client";
-import queue from "../jobs/baseQueue"
 const prisma = new PrismaClient();
 
-const highPost = async () => {
+const bestEdit = async () => {
     try {
 
         let date: Date = new Date();
@@ -63,22 +57,8 @@ const highPost = async () => {
             }
 
         })
-
-
-    } catch (error) {
-        console.log(error)
-    }
-}
-
-type awardees = {
-    userId: number,
-    date: string
-};
-
-const awardee = async (data: awardees[]): Promise<void> => {
-    try {
         await prisma.award.createMany({
-            data: data
+            data: finalData
         })
     } catch (error) {
         console.log(error)
@@ -86,4 +66,6 @@ const awardee = async (data: awardees[]): Promise<void> => {
 }
 
 
-export default { awardee, highPost }
+
+
+export default bestEdit 

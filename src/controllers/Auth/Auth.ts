@@ -10,7 +10,7 @@ import logger from "../../loggers/logger";
 import notFound from "../../errors/ApiError404"
 import BadRequest from "../../errors/BadRequest"
 import generator from "generate-password";
-import baseQueue from '../../jobs/baseQueue'
+import queue from '../../jobs/baseQueue'
 
 
 dotenv.config();
@@ -59,7 +59,7 @@ const register = async (req: Request, res: Response,next:NextFunction) => {
 
 
         if (newUser) {
-            await baseQueue.add('email', data)
+            await queue.baseQueue.add('email', data)
             res.status(StatusCodes.CREATED).json({ success: true, data: newUser })
         }
     } catch (error) {
@@ -167,7 +167,7 @@ const resetLink = async (req: Request, res: Response,next:NextFunction) => {
         <p>You have requested to reset your password, Click the link below to reset your password</p>
          <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/reset-password?token=${resetLink}"> Reset Password </a>`
         const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.PASSWORD_RESET, html);
-        await baseQueue.add('email', data)
+        await queue.baseQueue.add('email', data)
         res.status(StatusCodes.OK).json({ success: true, msg: constant.EMAIL.RESET_SUCCESS })
     } catch (error) {
         logger.error("Password reset link failed", error)
@@ -272,7 +272,7 @@ const adminCreateUser = async (req: Request, res: Response,next:NextFunction) =>
 
         const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.EMAIL_SUBJECT, html);
 
-        await baseQueue.add('email', data)
+        await queue.baseQueue.add('email', data)
         if (newUser) {
             res.status(StatusCodes.CREATED).json({ success: true, data: newUser })
         }

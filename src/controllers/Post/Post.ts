@@ -10,7 +10,7 @@ import cloudinary from "../../utils/cloudinary";
 
 const prisma = new PrismaClient();
 
-const fetchAllPosts = async (req: Request, res: Response,next:NextFunction) => {
+const fetchAllPosts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const posts = await prisma.post.findMany({});
         res.status(StatusCodes.OK).json({ success: true, data: posts });
@@ -20,7 +20,7 @@ const fetchAllPosts = async (req: Request, res: Response,next:NextFunction) => {
     }
 }
 
-const getAPost = async (req: Request, res: Response,next:NextFunction) => {
+const getAPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id: postId } = req.params
         const post = await prisma.post.findUnique({
@@ -35,7 +35,7 @@ const getAPost = async (req: Request, res: Response,next:NextFunction) => {
     }
 }
 
-const fetchAllPublishedPosts = async (req: Request, res: Response,next:NextFunction) => {
+const fetchAllPublishedPosts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         logger.debug("here")
         const posts = await prisma.post.findMany({
@@ -50,7 +50,7 @@ const fetchAllPublishedPosts = async (req: Request, res: Response,next:NextFunct
     }
 }
 
-const fetchAllunPublishedPosts = async (req: Request, res: Response,next:NextFunction) => {
+const fetchAllunPublishedPosts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const posts = await prisma.post.findMany({
             where: {
@@ -64,9 +64,9 @@ const fetchAllunPublishedPosts = async (req: Request, res: Response,next:NextFun
     }
 }
 
-const createPost = async (req: Request, res: Response,next:NextFunction) => {
+const createPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { title, content} = req.body;
+        const { title, content } = req.body;
         const imageContent = await cloudinary.uploader.upload(req.file?.path!, {
             folder: "posts"
         })
@@ -77,7 +77,7 @@ const createPost = async (req: Request, res: Response,next:NextFunction) => {
                 title,
                 content,
                 image_id: imageContent.public_id,
-                imageUrl:imageContent.url,
+                imageUrl: imageContent.url,
                 userId: req.user?.userId!
             }
         })
@@ -88,16 +88,16 @@ const createPost = async (req: Request, res: Response,next:NextFunction) => {
     }
 }
 
-const updatePost = async (req: Request, res: Response,next:NextFunction) => {
+const updatePost = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id: postId } = req.params;
         const { title, content } = req.body;
         const postExist = await prisma.post.findUnique({
-            where:{
+            where: {
                 id: parseInt(postId)
             }
         })
-        if(!postExist){
+        if (!postExist) {
             throw new notFound("Post not found")
         }
         const post = await prisma.post.update({
@@ -116,14 +116,14 @@ const updatePost = async (req: Request, res: Response,next:NextFunction) => {
     }
 }
 
-const changeImage = async (req: Request, res: Response,next:NextFunction) => {
+const changeImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id: postId } = req.params;
         let isCloudDeleted = await deleteCloudinaryImage(req, postId);
         if (!isCloudDeleted) {
             throw new internalServerError("Failed to deleted from cloudinary")
         }
-        const changedPic = await updatePicture(postId,req)
+        const changedPic = await updatePicture(postId, req)
         res.status(StatusCodes.OK).json({ success: true, data: changedPic });
     } catch (error) {
         logger.error("Changing Image failed", error)
@@ -132,7 +132,7 @@ const changeImage = async (req: Request, res: Response,next:NextFunction) => {
 
 }
 
-const publishOrUnpublishPost = async (req: Request, res: Response,next:NextFunction) => {
+const publishOrUnpublishPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id: postId } = req.params;
         const getPost = await prisma.post.findUnique({
@@ -141,7 +141,7 @@ const publishOrUnpublishPost = async (req: Request, res: Response,next:NextFunct
             }
         })
 
-        if(!getPost){
+        if (!getPost) {
             throw new notFound("Post not Found")
         }
 
@@ -164,7 +164,7 @@ const publishOrUnpublishPost = async (req: Request, res: Response,next:NextFunct
 
 
 
-const fetchAllPostPaginated = async (req: Request, res: Response,next:NextFunction) => {
+const fetchAllPostPaginated = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const perPage = parseInt((req.query.limit as string), 10) || 2;
         const cursor = req.query.cursor as string || undefined;
@@ -233,18 +233,22 @@ const deleteCloudinaryImage = async (req: Request, postId: string) => {
             id: parseInt(postId)
         }
     })
+
+
     const deleteOldPic = await cloudinary.uploader.destroy(post?.image_id!, { resource_type: "image" }, (result, error) => {
         console.log(result, error)
+
     })
 
     return deleteOldPic;
 }
 
-const updatePicture = async (postId,req: Request) => {
+const updatePicture = async (postId: string, req: Request) => {
     const profile = await cloudinary.uploader.upload(req.file?.path!, {
         folder: "posts"
     })
 
+    //TODO: delete from fileSystem ----> just call that function responsible
     const updatePostPic = await prisma.post.update({
         where: {
             id: parseInt(postId)
@@ -258,7 +262,7 @@ const updatePicture = async (postId,req: Request) => {
     return updatePostPic;
 }
 
-const getUserSpecificPost = async (req: Request, res: Response,next:NextFunction) => {
+const getUserSpecificPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const getAllUserPosts = await prisma.post.findMany({
             where: {
@@ -287,6 +291,5 @@ export default
         changeImage,
         publishOrUnpublishPost,
         getUserSpecificPost,
-        fetchAllPostPaginated
-
+        fetchAllPostPaginated,
     }

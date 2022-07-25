@@ -7,7 +7,7 @@ queueEvents.on('completed', ({ jobId }) => {
 });
 
 queueEvents.on('failed', ({ jobId, failedReason }) => {
-    console.error('error sending email',jobId, failedReason);
+    console.error('error sending email', jobId, failedReason);
 });
 
 export default queueEvents;

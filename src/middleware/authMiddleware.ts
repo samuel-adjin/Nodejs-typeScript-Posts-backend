@@ -29,6 +29,7 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
         next();
     } catch (error) {
         logger.error("Error verifying access token", error)
+        next(error)
     }
 }
 
@@ -51,6 +52,7 @@ const verifyRefreshToken = async (req: Request, res: Response, next: NextFunctio
         next();
     } catch (error) {
         logger.error("Error verifying refresh token", error)
+        next(error)
     }
 }
 

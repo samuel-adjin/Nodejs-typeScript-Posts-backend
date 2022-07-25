@@ -336,7 +336,7 @@ const deleteProfile = async (req: Request, res: Response, next: NextFunction) =>
 
 
 
-const fetchAllUsersPaginated = async (req: Request, res: Response,next: NextFunction) => {
+const fetchAllUsersPaginated = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const perPage = parseInt((req.query.limit as string), 10) || 2;
         let pageNumber = parseInt((req.query.pageNumber as string), 10) || 1;

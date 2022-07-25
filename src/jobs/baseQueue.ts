@@ -1,5 +1,11 @@
-import { Queue } from 'bullmq';
+import { Queue, QueueScheduler } from 'bullmq';
 
+const AppQueueScheduler = new QueueScheduler("baseQueue",
+    {
+        connection: {
+            port: 6379
+        }
+    });
 
 const baseQueue = new Queue('baseQueue', {
     connection: {
@@ -8,4 +14,4 @@ const baseQueue = new Queue('baseQueue', {
 });
 
 
-export default baseQueue;
+export default { baseQueue, AppQueueScheduler };
