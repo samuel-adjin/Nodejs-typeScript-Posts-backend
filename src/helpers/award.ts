@@ -8,10 +8,10 @@ const bestEdit = async () => {
         let date: Date = new Date();
         let year: number = date.getFullYear();
         let month: number = date.getMonth();
-        let firstDayOfMonth: Date = new Date(year, month - 1, 1)
-        let LastDayOfMonth: Date = new Date(year, month, 0)
+        let firstDayOfMonth: Date = new Date(year, month - 1, 1) // 02/06   
+        let LastDayOfMonth: Date = new Date(year, month, 0) // 31/06
        
-
+        // 12/06
 
         const PostWithinRange = await prisma.post.findMany({
             where: {
@@ -51,7 +51,7 @@ const bestEdit = async () => {
         const finalData = awardee.map(d => {
             return {
                 "userId": d.id,
-                "date": `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+                "date": `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`
             }
 
         })

@@ -9,6 +9,8 @@ import postRoute from "./routes/Post"
 import globalErrorHandler from "./middleware/global_error_handler"
 import likesRoute from "./routes/Likes"
 import commentRoute from "./routes/Comment"
+import awardRoute from "./routes/award"
+
 
 
 
@@ -31,6 +33,8 @@ app.use('/v1/auth', authRoute)
 app.use('/v1/post', postRoute)
 app.use('/v1/likes', likesRoute)
 app.use('/v1/comment', commentRoute)
+app.use('/v1/award', awardRoute)
+
 
 
 
