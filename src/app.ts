@@ -10,8 +10,8 @@ import globalErrorHandler from "./middleware/global_error_handler"
 import likesRoute from "./routes/Likes"
 import commentRoute from "./routes/Comment"
 import awardRoute from "./routes/award"
-
-
+import cors from "cors"
+import notFound from "./errors/ApiError404"
 
 
 dotenv.config();
@@ -20,7 +20,6 @@ app.use(express.json())
 app.use(morganHttp)
 app.use(helmet())
 app.use(morgan('combined'))
-app.use(urlencoded({ extended: false }));
 
 
 // healthCheck
@@ -34,9 +33,16 @@ app.use('/v1/post', postRoute)
 app.use('/v1/likes', likesRoute)
 app.use('/v1/comment', commentRoute)
 app.use('/v1/award', awardRoute)
+app.set('view engine', 'ejs');
 
 
+app.use('*', () => {
+  throw new notFound("No such route found");
+});
 
+
+app.use(cors({ methods: ['POST', 'GET', 'PUT', 'DELETE', 'OPTIONS'], optionsSuccessStatus: 200 }));
+app.use(urlencoded({ extended: false }));
 
 app.use(globalErrorHandler)
 

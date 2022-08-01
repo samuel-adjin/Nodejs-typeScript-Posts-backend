@@ -7,27 +7,27 @@ dotenv.config();
 
 
 
-const emailConfirmation = async  (msg: Options)=>{
+const emailConfirmation = async (msg: Options) => {
+    console.log("In method")
     const transport = nodemailer.createTransport(
         nodemailerSendgrid({
             apiKey: process.env.SENDGRID_API_KEY!
         })
     );
-   await  transport.sendMail(msg)
+    await transport.sendMail(msg)
 }
 
 
 
 
-const emailData = (from:string | Address | undefined, to:string | Address | Array<string | Address> | undefined, subject:string | undefined,html:string | Buffer | Readable | AttachmentLike | undefined) =>{
-    const msg ={
-        from: from,
-        to: to,
-        subject: subject,
-        html: html,
-        
+const emailData = (to: string | Address | Array<string | Address> | undefined, link: string, name: string, password?:string) => {
+    const msg = {
+        to,
+        link,
+        name,
+        password
     };
     return msg;
 }
 
-export default {emailConfirmation,emailData};
+export default { emailConfirmation, emailData };

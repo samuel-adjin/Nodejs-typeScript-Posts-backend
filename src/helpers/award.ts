@@ -1,5 +1,6 @@
 
 import { PrismaClient } from "@prisma/client";
+import logger from "../loggers/logger"
 const prisma = new PrismaClient();
 
 const bestEdit = async () => {
@@ -8,16 +9,15 @@ const bestEdit = async () => {
         let date: Date = new Date();
         let year: number = date.getFullYear();
         let month: number = date.getMonth();
-        let firstDayOfMonth: Date = new Date(year, month - 1, 1) // 02/06   
-        let LastDayOfMonth: Date = new Date(year, month, 0) // 31/06
-       
-        // 12/06
+        let firstDayOfMonth: Date = new Date(year, month - 1, 1)
+        let LastDayOfMonth: Date = new Date(year, month, 0)
+
 
         const PostWithinRange = await prisma.post.findMany({
             where: {
                 updated_at: {
-                    gte:firstDayOfMonth,
-                    lte:LastDayOfMonth
+                    gte: firstDayOfMonth,
+                    lte: LastDayOfMonth
                 },
                 isPublished: true,
             }
@@ -51,7 +51,7 @@ const bestEdit = async () => {
         const finalData = awardee.map(d => {
             return {
                 "userId": d.id,
-                "date": `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`
+                "date": `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
             }
 
         })
@@ -60,6 +60,7 @@ const bestEdit = async () => {
         })
     } catch (error) {
         console.log(error)
+        logger.error(error)
     }
 }
 

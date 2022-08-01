@@ -301,8 +301,6 @@ const updateProfileImage = async (req: Request, res: Response, next: NextFunctio
             const updateProfilePic = await updateProfile(req)
             return res.status(StatusCodes.OK).json({ success: true, data: updateProfilePic })
         }
-
-
     } catch (error) {
         logger.error("Error updating profile pic", error)
         next(error)

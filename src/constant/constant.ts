@@ -42,7 +42,8 @@ const EMAIL =
 {
     EMAIL_SUBJECT :"Registeration Confirmation",
     PASSWORD_RESET: "Password Reset",
-    RESET_SUCCESS:"Password reset link successfully sent to your email"
+    RESET_SUCCESS:"Password reset link successfully sent to your email",
+    
 }
 
 const TOKEN =
@@ -55,4 +56,13 @@ const UNAUTHORIZED =
 {
     AUTHORIZED_REQUEST :"You are not authorized to access this resource"
 }
-export default {Auth,Redis,Program,USER,TOKEN,COURSE,EMAIL,UNAUTHORIZED}
+
+const JOBS = 
+{
+    QUEUENAME:"baseQueue",
+    EMAILVERIFICATION:"email",
+    AWARD :"award",
+    RESETLINK: "reset_link",
+    ADMINCREATED: "admin_created"
+}
+export default {Auth,Redis,Program,USER,TOKEN,COURSE,EMAIL,UNAUTHORIZED,JOBS}

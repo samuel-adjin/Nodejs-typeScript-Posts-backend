@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import user from "../controllers/User/User"
 import validation from "../validators/UserRequestValidation"
-// import UserUpdateRules from "../validators/UserUpdateRequestRules"
 import middleware from "../middleware/authMiddleware"
 import multer from '../utils/multer';
+import userUpdateValidator from '../validators/userUpdateSchema';
+import imageValidator from '../validators/ImageSchema';
+import descriptionValidator from '../validators/descriptionSchema';
+
+//TODO:  add middleware to check Role on some routes
 
 
 
@@ -14,11 +18,11 @@ router.route('/not-users').get(middleware.verifyToken, user.fetchAllNotUser);
 router.route('/all-users').get(middleware.verifyToken, user.fetchAllUsers);
 router.route('/del-user-profile').patch(middleware.verifyToken, user.deleteProfile);
 
-router.route('/update-record').put(middleware.verifyToken, user.updateUserRecord);
+router.route('/update-record').put(middleware.verifyToken,userUpdateValidator,validation, user.updateUserRecord);
 router.route('/delete-many-users').delete(middleware.verifyToken, user.deleteManyUsers)
 router.route('/search-users').get(middleware.verifyToken, user.searchUserByEmailOrUsername)
-router.route('/update-description').patch(middleware.verifyToken, user.UpdateUserDescription)
-router.route('/update-profile-pic').post(middleware.verifyToken, multer.upload.single('image'),user.updateProfileImage)
+router.route('/update-description').patch(middleware.verifyToken,descriptionValidator,validation, user.UpdateUserDescription)
+router.route('/update-profile-pic').post(middleware.verifyToken,imageValidator,validation, multer.upload.single('image'),user.updateProfileImage)
 router.route('/delete-profile-pic').delete(middleware.verifyToken, user.deleteManyUsers)
 router.route('/editor-users-paginate').get(middleware.verifyToken, user.fetchAllEditorsPaginated)
 router.route('/all-normal-users-paginate').get(middleware.verifyToken, user.fetchAllNormalUsersPaginated)

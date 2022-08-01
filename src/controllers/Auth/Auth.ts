@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import constant from "../../constant/constant";
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import emailHelper from '../../helpers/email';
+import emailHelper from '../../services/email';
 import jwtHelper from '../../helpers/jwt';
 import { StatusCodes } from "http-status-codes";
 import logger from "../../loggers/logger";
@@ -11,7 +11,6 @@ import notFound from "../../errors/ApiError404"
 import BadRequest from "../../errors/BadRequest"
 import generator from "generate-password";
 import queue from '../../jobs/baseQueue'
-
 
 dotenv.config();
 import { Prisma, PrismaClient } from '@prisma/client'
@@ -49,16 +48,14 @@ const register = async (req: Request, res: Response,next:NextFunction) => {
         const newUser = await prisma.user.create({
             data: userDetails
         })
-        // send email
+       
         const emailToken = jwt.sign({ username, email }, process.env.EMAIL_TOKEN!)
-        const html = `<h3>Hello,${newUser.username}</h3>
-           <p>Thanks for signing up with farad, Click the link below to verify your email</p>
-            <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/verify-email?token=${emailToken}"> verify email </a>`
-
-        const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.EMAIL_SUBJECT, html);
+        const link:string =`${req.protocol}://${req.headers.host}/api/v1/auth/verify-email?token=${emailToken}`
+        const data = emailHelper.emailData(newUser.email,link,newUser.username);
 
 
         if (newUser) {
+             // add email data to queue
             await queue.baseQueue.add('email', data)
             res.status(StatusCodes.CREATED).json({ success: true, data: newUser })
         }
@@ -162,12 +159,10 @@ const resetLink = async (req: Request, res: Response,next:NextFunction) => {
             throw new notFound(constant.Auth.InvalidEmail)
         }
         const resetLink = jwt.sign({ email }, process.env.RESET_LINK!);
-        //send email with reset Link
-        const html = `<h3>Hello,${getUser?.username}</h3>
-        <p>You have requested to reset your password, Click the link below to reset your password</p>
-         <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/reset-password?token=${resetLink}"> Reset Password </a>`
-        const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.PASSWORD_RESET, html);
-        await queue.baseQueue.add('email', data)
+        // add email data to queue`
+         const link:string = `${req.protocol}://${req.headers.host}/api/v1/auth/reset-password?token=${resetLink}`;
+        const data = emailHelper.emailData(email,link,getUser?.username!);
+        await queue.baseQueue.add(constant.JOBS.RESETLINK, data)
         res.status(StatusCodes.OK).json({ success: true, msg: constant.EMAIL.RESET_SUCCESS })
     } catch (error) {
         logger.error("Password reset link failed", error)
@@ -253,26 +248,24 @@ const adminCreateUser = async (req: Request, res: Response,next:NextFunction) =>
             symbols: true,
             strict: true
         })
+        const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await prisma.user.create({
             data: {
                 email,
                 username: email,
-                password,
+                password:hashedPassword,
                 role: "EDITOR",
                 firstName,
                 lastName,
                 mobile
             }
         });
-        // send email
+     
         const emailToken = jwt.sign({ email }, process.env.EMAIL_TOKEN!)
-        const html = `<h3>Hello,${newUser.username}</h3>
-           <p>An account with the username:${email} and password${password} has been created for you. After verifying account you are advised to change your password and username Click the link below to verify your email</p>
-            <a href ="${req.protocol}://${req.headers.host}/api/v1/auth/verify-email?token=${emailToken}"> verify email </a>`
-
-        const data = emailHelper.emailData(process.env.EMAIL_ADDRESS!, email, constant.EMAIL.EMAIL_SUBJECT, html);
-
-        await queue.baseQueue.add('email', data)
+        const link:string = `${req.protocol}://${req.headers.host}/api/v1/auth/verify-email?token=${emailToken}`
+        const data = emailHelper.emailData( email,link,firstName,password);
+           // add email data to queue
+        await queue.baseQueue.add(constant.JOBS.ADMINCREATED, data)
         if (newUser) {
             res.status(StatusCodes.CREATED).json({ success: true, data: newUser })
         }

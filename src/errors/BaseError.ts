@@ -3,9 +3,6 @@ import {
 } from 'http-status-codes';
 
 class BaseError extends Error {
-   
-   
-
     public readonly name: string;
     public readonly  statusCode: StatusCodes;
     public readonly isOperational: boolean;
