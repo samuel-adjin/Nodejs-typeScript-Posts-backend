@@ -32,16 +32,6 @@ const checkRole = async (role: string[] | string, req: Request, res: Response, n
     }
 }
 
-const authorize = async (req:Request,res:Response,next:NextFunction)=>{
-    try {
-        if(!req.user){
-            throw new BadRequest("Not authorize", StatusCodes.UNAUTHORIZED)
-        }
-        next();
-    } catch (error) {
-        logger.error("Failed to check user", error)
-        next(error)
-    }
-}
 
-export default { checkRole,authorize }
+
+export default {checkRole}

@@ -7,8 +7,8 @@ import signUpValidator from "../validators/signUpSchema"
 import passwordResetValidator from "../validators/passwordResetSchema"
 import passwordResetLinkValidator from "../validators/passwordResetLinkSchema"
 import AdminUserValidator from '../validators/Admin-createSchema';
-
-
+import authorizeMiddleware from '../middleware/authorizeMiddleware';
+import { Request,Response,NextFunction } from 'express';
 
 
 
@@ -22,7 +22,8 @@ router.route('/verify-email').post(auth.verifyEmail);
 router.route('/reset-link').post(passwordResetLinkValidator,UserRequestValidation,auth.resetLink);
 router.route('/reset-password').post(passwordResetValidator,UserRequestValidation,auth.resetPassword);
 router.route('/refresh-token').get(middleware.verifyRefreshToken, auth.token);
-router.route('/admin-register').post(AdminUserValidator,UserRequestValidation,auth.adminCreateUser);
+router.route('/admin-register').post(middleware.verifyToken, (req:Request,res:Response,next:NextFunction)=>authorizeMiddleware.checkRole("ADMIN",req,res,next) ,
+AdminUserValidator,UserRequestValidation,auth.adminCreateUser);
 
 
 export default router;
